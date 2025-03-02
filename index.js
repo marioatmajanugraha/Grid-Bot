@@ -15,7 +15,6 @@ CFonts.say('Airdrop 888', {
 
 console.log(chalk.green('🚀 Script coded by - @balveerxyz || Auto Ping Grid'));
 
-// Fungsi untuk login dan ambil token via Playwright
 const getTokenFromBrowser = async (email, password) => {
   try {
     console.log(chalk.yellow(`🔑 Login untuk akun: ${email}`));
@@ -42,11 +41,11 @@ const getTokenFromBrowser = async (email, password) => {
       return oauthCookie.value;
     } else {
       console.log(chalk.red('❌ Token tidak ditemukan!'));
-      process.exit(1);
+      return null;
     }
   } catch (err) {
     console.log(chalk.red('❌ Kesalahan saat login!'));
-    process.exit(1);
+    return null;
   }
 };
 
@@ -68,23 +67,7 @@ const verifyToken = async (token) => {
   }
 };
 
-const accounts = fs.readFileSync('accounts.txt', 'utf-8').split('\n').filter(Boolean);
-if (accounts.length === 0) {
-  console.log(chalk.red('❌ Tidak ada akun ditemukan di accounts.txt!'));
-  process.exit(1);
-}
-
-const [email, password, uuid] = accounts[0].split('|');
-
-if (!uuid) {
-  console.log(chalk.red('❌ UUID tidak ditemukan!'));
-  process.exit(1);
-}
-
-getTokenFromBrowser(email, password).then(async (token) => {
-  const isValid = await verifyToken(token);
-  if (!isValid) process.exit(1);
-
+const startWebSocket = (uuid, token) => {
   const generateWsUrl = () => `ws://ws.getgrid.ai:8080/becl/${uuid}/${token}`;
 
   const wsHeaders = {
@@ -93,38 +76,56 @@ getTokenFromBrowser(email, password).then(async (token) => {
     'user-agent': 'Mozilla/5.0'
   };
 
-  const startPingInterval = (ws) => {
-    setInterval(() => {
-      console.log(chalk.yellow('🔔 Ping ke server...'));
-      ws.send(JSON.stringify({ op: 'ping' }));
-    }, 30000);
-  };
-
   const connectWebSocket = (agent = null) => {
     console.log(chalk.cyan(`🔗 Menghubungkan ke WebSocket dengan UUID: ${uuid}`));
     const wsUrl = generateWsUrl();
-    
     const ws = new WebSocket(wsUrl, { agent, headers: wsHeaders });
 
     ws.on('open', () => {
-      console.log(chalk.green('✅ WebSocket terhubung!'));
-      startPingInterval(ws);
+      console.log(chalk.green(`✅ WebSocket terhubung untuk UUID: ${uuid}`));
+      setInterval(() => {
+        console.log(chalk.yellow(`🔔 Ping ke server untuk UUID: ${uuid}`));
+        ws.send(JSON.stringify({ op: 'ping' }));
+      }, 30000);
     });
 
     ws.on('message', () => {
-      console.log(chalk.cyan('📩 Pesan diterima dari server'));
+      console.log(chalk.cyan(`📩 Pesan diterima dari server untuk UUID: ${uuid}`));
     });
 
     ws.on('error', () => {
-      console.log(chalk.red('❌ WebSocket error'));
+      console.log(chalk.red(`❌ WebSocket error untuk UUID: ${uuid}`));
     });
 
     ws.on('close', () => {
-      console.log(chalk.red('🔴 Koneksi terputus. Reconnect dalam 5 detik...'));
+      console.log(chalk.red(`🔴 Koneksi terputus untuk UUID: ${uuid}. Reconnect dalam 5 detik...`));
       setTimeout(() => connectWebSocket(agent), 5000);
     });
   };
 
-  console.log(chalk.gray('🚫 Proxy tidak digunakan, langsung terhubung...'));
   connectWebSocket();
+};
+
+const accounts = fs.readFileSync('accounts.txt', 'utf-8').split('\n').filter(Boolean);
+if (accounts.length === 0) {
+  console.log(chalk.red('❌ Tidak ada akun ditemukan di accounts.txt!'));
+  process.exit(1);
+}
+
+console.log(chalk.blue(`🔍 Ditemukan ${accounts.length} akun. Memulai proses...`));
+
+accounts.forEach(async (account) => {
+  const [email, password, uuid] = account.split('|');
+
+  if (!email || !password || !uuid) {
+    console.log(chalk.red(`❌ Data akun tidak valid: ${account}`));
+    return;
+  }
+
+  const token = await getTokenFromBrowser(email, password);
+  if (token) {
+    const isValid = await verifyToken(token);
+    if (isValid) startWebSocket(uuid, token);
+  }
 });
+
