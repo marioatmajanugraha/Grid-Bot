@@ -10,6 +10,9 @@
 - 📊 **Earnings Check:** Tampilkan penghasilan harian langsung dari API.
 - 🧹 **Clean Logs:** Log terminal yang bersih tanpa bocor data sensitif.
 
+- ## New Update
+- Support Multi Account
+
 ---
 ## Cara dapat UUID via Extension
 ![how to get UUID](https://github.com/user-attachments/assets/2cb45c3c-da93-4e03-bf35-f14e887859c6)
