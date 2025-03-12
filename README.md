@@ -86,6 +86,13 @@ MIT License
 
 ---
 
+## 📞 Kontak
+Jika ada pertanyaan, hubungi: [@balveerxyz](https://t.me/balveerxyz)
+
+Join channel Telegram: [Airdrop 888](https://t.me/airdroplocked)
+
+---
+
 ✨ Keep Grinding, Keep Earning! ✨
 
 🔥 Airdrop 888 | Grind. Earn. Repeat. 🔥
